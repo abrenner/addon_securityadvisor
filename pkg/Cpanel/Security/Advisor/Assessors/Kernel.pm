@@ -33,7 +33,7 @@ use Cpanel::OSSys           ();
 use Cpanel::OSSys::Env      ();
 
 sub version {
-    return '1.01.2';
+    return '1.01.3';
 }
 
 sub generate_advice {
@@ -124,14 +124,20 @@ sub kernel_updates {
 sub installed_kernels {
     my %installed_kernels;
     my $recent_kernel;
+    my $versionNumber;
     my $recent_buildtime = 0;
     my @args             = ( 'rpm', '-qa', '--queryformat', '%{NAME} %{VERSION}-%{RELEASE} %{BUILDTIME}\n', 'kernel' );
     my @rpm_response     = Cpanel::SafeRun::Errors::saferunnoerror(@args);
     if (@rpm_response) {
         foreach my $version_check (@rpm_response) {
             my ( $rpm, $version, $buildtime ) = split( qr/\s+/, $version_check );
+            # The idea here is to convert the string $VERSION to all numbers
+            # then compare with other installed kernels. This should close
+            # 110893 (internal case) and 6092679 (ticket id).
+            $versionNumber = $version;
+            $versionNumber =~ tr/0-9//cd;
             if ( ($rpm) && ($version) && ( $version =~ m/\d/ ) && ($buildtime) ) {
-                $installed_kernels{$version} = $buildtime;
+                $installed_kernels{$version} = $versionNumber;
             }    # End valid version
         }    # next rpm and version to check
     }    # end of if rpm_response
